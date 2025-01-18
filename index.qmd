@@ -1,0 +1,221 @@
+---
+title: "Mastering Model Evaluation: Understanding Accuracy, Precision, and Recall in Machine Learning
+"
+author: "Fazeeia Mohammed"
+date: "`r Sys.Date()`"
+output: html_document
+listing:
+  contents: posts
+  sort: "date desc"
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: false
+page-layout: full
+title-block-banner: true
+---
+
+```{r}
+
+```
+
+# Model Evaluation: The Key to Effective Data Science
+
+One of the key aspects of **data science** is **model evaluation**, as no one wants a model that doesn't perform well. In this blog, we will explore the process of evaluating effective models.
+
+## A Real-World Scenario
+
+Imagine you work for a **bank** launching a marketing campaign to offer a special **term deposit** to customers. The goal is to predict which customers are most likely to accept the offer.
+
+-   If you contact too many customers who aren't interested, you risk **wasting valuable marketing resources**, which could have been better spent on customers more likely to subscribe.
+-   However, if you fail to reach the right customers, you miss out on **potential new term deposits**.
+
+### Enter Machine Learning
+
+This is where **machine learning** comes in. You create a **predictive model** that analyzes customer data such as their **age**, **job**, **marital status**, and previous interactions with the bank to predict who will accept the offer.
+
+### The Challenge
+
+However, here's the challenge: even if the model predicts a large number of people who will subscribe, how can you be sure that these predictions are actually accurate?
+
+-   Will your model identify the **real potential subscribers**, or will it simply give you a list of customers who aren’t interested?
+
+### Why Model Evaluation Matters
+
+This is why **model evaluation** is so important. It helps you assess how well your model is performing and whether it’s truly identifying the right customers.
+
+Evaluating your model ensures that you are not only predicting who will subscribe but that your predictions are **reliable**, **efficient**, and **actionable** for the marketing team. This ultimately help with building reports that summarize how well a team performs.
+
+## You Need a Relevant Data Source to Get Started
+
+```{r, echo=FALSE}
+
+library(knitr)
+data <- read.csv("data/data.csv")
+data$job <- as.factor(data$job)
+data$marital <- as.factor(data$marital)
+data$education <- as.factor(data$education)
+data$default <- as.factor(data$default)
+data$housing <- as.factor(data$housing)
+data$contact <- as.factor(data$contact)
+data$month <- as.factor(data$month)
+data$day_of_week <- as.factor(data$day_of_week)
+
+```
+
+To get started with **machine learning**, it's crucial to work with a **relatable dataset** that mirrors **real-world applications**. In this project, we will be using the **Bank Marketing dataset** from the **UCI Machine Learning Repository** (Moro and Cortez, 2014).
+
+This dataset focuses on a **Portuguese bank's direct marketing campaigns**, specifically predicting whether a customer will subscribe to a **term deposit** based on various factors.
+
+## What are we trying to predict? 
+
+The **target variable** , which is the variable we are trying to predict denoted as **"y"**, indicates whether the customer subscribed to a term deposit. It is a binary variable:
+
+-   **"Yes"**: The customer subscribed to the term deposit
+-   **"No"**: The customer did not subscribe to the term deposit
+
+## Lets take a deeper look at our data.
+
+Before analysis, the **Bank Marketing data set** was cleaned by handling missing values, correcting data types, and removing irrelevant columns .
+
+We noticed that the **target variable (y)** is **highly imbalanced**, with more customers not subscribing to the term deposit. This is a common challenge in marketing datasets, and we can visualize this imbalance with a **bar chart**.
+
+```{r,echo=FALSE}
+
+
+# Load necessary libraries
+library(ggplot2)
+
+# Create a color-blind friendly bar chart
+ggplot(data, aes(x = y)) +
+  geom_bar(fill = c("#E69F00", "#56B4E9")) +  # Color Universal Design (CUD) colors
+  labs(title = "Figure 1.0 Imbalance in Target Variable: Subscription to Term Deposit (y)",
+       x = "Subscription Status (y)",
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
+
+```
+
+```{r, echo=FALSE}
+library(caTools)
+# Convert the target variable 'y' to a factor for classification
+data$y <- as.factor(data$y)
+
+# Split the data into training (70%) and testing (30%) sets
+set.seed(123)  # For reproducibility
+split <- sample.split(data$y, SplitRatio = 0.7)
+train_data <- subset(data, split == TRUE)
+test_data <- subset(data, split == FALSE)
+
+
+```
+
+We will have to consider this when evaluating the model later on.
+
+We split the dataset into **training** and **test** sets. The training data was used to build the logistic regression model, while the test data was kept aside to evaluate the model's performance on unseen data.
+
+The logistic regression model helps us understand how well the model predicts the target variable. We assess its performance using metrics like **accuracy**, **precision**, **recall**, and the **confusion matrix**.
+
+These evaluations give us insights into how well the model generalizes to new data before deployment
+
+```{r, echo=FALSE}
+model <- glm(y ~ ., data = train_data, family = binomial())
+
+predictions <- predict(model, test_data, type = "response")
+predicted_class <- ifelse(predictions > 0.5, "yes", "no")
+```
+
+## Understanding Model Evaluation Metrics
+
+When working with machine learning models, especially for business goals like predicting customer behavior, it's important to understand the key metrics that help you evaluate the performance of your model. In this post, we’ll dive into three important metrics: **Accuracy**, **Precision**, and **Recall.**
+
+### 1. **Accuracy**
+
+**What it is**:\
+Accuracy tells us how often the model is correct overall. It's the percentage of all predictions (both positive and negative) that were correct.
+
+**Formula**: Accuracy = (True Positives + True Negatives) / Total Predictions
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(caret)
+train_predictions <- predict(model, train_data, type = "response")
+
+train_pred_class <- ifelse(train_predictions > 0.5, "yes", "no")
+test_predictions <- predict(model, test_data, type = "response")
+test_pred_class <- ifelse(test_predictions > 0.5, "yes", "no")
+
+suppressWarnings({train_cm <- confusionMatrix(factor(train_pred_class), factor(train_data$y))})
+suppressWarnings({test_cm <- confusionMatrix(factor(test_pred_class), factor(test_data$y))})
+
+train_accuracy <- train_cm$overall['Accuracy']
+test_accuracy <- test_cm$overall['Accuracy']
+
+
+cat("The accuracy on the training data is", round(train_accuracy, 4) * 100, "%.\n")
+cat("The accuracy on the test data is", round(test_accuracy, 4) * 100, "%.\n")
+```
+
+**Why it matters**:\
+In business terms, accuracy is like the overall success rate of your marketing campaign. If you’re trying to predict which customers will accept an offer, accuracy gives you an idea of how often your model makes the right prediction. High accuracy means you’re making the right calls most of the time.
+
+However, accuracy can be misleading in some cases, especially when dealing with imbalanced data like in the case of our data, which leads us to the next metrics.
+
+### 2. **Precision**
+
+**What it is**:\
+Precision focuses on how many of the customers that the model predicted would subscribe actually did. In other words, of all the customers the model predicted as "yes," how many actually said "yes"?
+
+**Formula**:
+
+Precision = True Positives / (True Positives + False Positives)
+
+```{r, echo=FALSE}
+train_precision <- train_cm$byClass['Pos Pred Value']  # Precision for 'yes' class
+test_precision <- test_cm$byClass['Pos Pred Value']    # Precision for 'yes' class
+
+# Output precision in sentences
+cat("The precision on the training data is", round(train_precision, 4) * 100, "%.\n")
+cat("The precision on the test data is", round(test_precision, 4) * 100, "%.\n")
+```
+
+**Why it matters**:\
+Precision is about **spending your marketing budget wisely**. If the model predicts a lot of customers will subscribe but only a few actually do, you’ve wasted resources targeting uninterested people. High precision means that when the model says someone will accept the offer, they likely will.
+
+### 3. **Recall**
+
+**What it is**:\
+Recall tells us how many of the actual "yes" customers the model successfully identified. It’s the proportion of actual positives that the model was able to predict.
+
+**Formula**:
+
+Precision = True positives / (True Positives+False Positives)
+
+```{r,  echo=FALSE}
+train_recall <- train_cm$byClass['Sensitivity']  # Recall (Sensitivity) for 'yes' class
+test_recall <- test_cm$byClass['Sensitivity']    # Recall (Sensitivity) for 'yes' class
+
+# Output recall in sentences
+cat("The recall on the training data is", round(train_recall, 4) * 100, "%.\n")
+cat("The recall on the test data is", round(test_recall, 4) * 100, "%.\n")
+
+#chat gpt was use to fix the grammar and mark down in this project.
+
+```
+
+**Why it matters**:\
+In business, recall is about **not missing out** on potential customers. A high recall means that the model is good at identifying people who are likely to subscribe, reducing the risk of missing valuable opportunities. However, if recall is too high, it can lead to a lot of false positives, so it’s important to balance recall with other metrics like precision.
+
+In later posts we will talk a bit about the F1 score and how it is able to factor in each of these metrics into a final score.
+
+------------------------------------------------------------------------
+
+## Conclusion
+
+Evaluating machine learning models through accuracy, precision and recall, is vital for making informed decisions and optimizing business strategies.By understanding how these metrics work and how they apply to real-world scenarios, you can build models that are not only accurate but also efficient and actionable.
+
+Whether you’re predicting customer behavior for a bank or targeting the right audience for a marketing campaign, these metrics are key to ensuring your model performs well and provides valuable insights.
+
+------------------------------------------------------------------------
+
+Stay tuned for future posts where we dive deeper into the technical details, such as handling data imbalances and fine-tuning model parameters for better performance.
